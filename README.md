@@ -203,3 +203,275 @@ way_1 callback函数
 		},5000);
 	})
 	
+ 	gulp.task('two',['one'],function(){
+		console.log('two was done')
+	})
+	//two 会在 one 任务异步操作完成后执行
+
+way_2 定义返回一个流对象，适用于任务就是操作gulp.src获取到流的情况
+
+	gulp.task('one',function(cb){
+		//拿到流中client/任意/任意.js
+		var stream =gulp.src('client/**/*.js')
+			.pipe(dosomething())//执行某些异步操作
+			.pipe(gulp.dest('build'));
+			return stream;
+	});
+	gulp.task('two'['one'],function(){
+		console.log('two was done')；
+	})
+
+way3  太复杂，就不写了，
+
+####gulp.watch()
+
+gulp.watch()用来监视文件变化，可以利用它执行相应任务，例如压缩等等
+
+	gulp.watch(glob[,opts],tasks)
+
+<b>glob</b>为要件是文件匹配模式<br>
+<b>opts</b>为一个可选的配置对象<br>
+<b>tasks</b>为文件变化后要执行的任务<br>
+
+	gulp.task('uglify',function(){
+		//do something
+	});
+	gulp.task('reload',function(){
+		//do something
+	});
+	gulp.watch('js/**/*.js',['uglify','reload']);
+	//js/**/*.js 发生改变，则立马执行uglify和reload task
+
+gulp.watch()另外一种使用形式
+
+	gulp.watch(glob[,opts,cb])
+
+//cb参数为一个函数，每当监视的glob发生变化，就会回调cb
+并且传入一个对象，该对象包含文件变化的一些信息，type属性为变化类型，可以是added,changed,deleted;path属性为发生变化的文件的路径
+
+	gulp.watch('js/**/*.js',function(event){
+		console.log(event.type);//变化类型added为新增，deleted为删除，changed为改变
+		console.log(event.path);//变化文件路径
+	})
+
+###gulp插件
+
+自动加载插件
+
+使用`gulp-load-plugins`
+
+	npm install --save-dev gulp-load-plugins
+
+
+> 要使用gulp的插件，首先得用require来把插件加载进来，如果我们要使用的插件非常多，那我们的gulpfile.js文件开头可能就会是这个样子的：
+	
+	var gulp = require('gulp'),
+	    //一些gulp插件,abcd这些命名只是用来举个例子
+	    a = require('gulp-a'), 
+	    b = require('gulp-b'),
+	    c = require('gulp-c'),
+	    d = require('gulp-d'),
+	    e = require('gulp-e'),
+	    f = require('gulp-f'),
+	    g = require('gulp-g'),
+	    //更多的插件...
+	    z = require('gulp-z');   
+
+虽然这没什么问题，但会使我们的gulpfile.js文件变得很冗长，看上去不那么舒服。gulp-load-plugins插件正是用来解决这个问题。
+gulp-load-plugins这个插件能自动帮你加载package.json文件里的gulp插件。例如假设你的package.json文件里的依赖是这样的:
+
+	{
+	  "devDependencies": {
+	    "gulp": "~3.6.0",
+	    "gulp-rename": "~1.2.0",
+	    "gulp-ruby-sass": "~0.4.3",
+	    "gulp-load-plugins": "~0.5.1"
+	  }
+	}
+
+然后我们可以在`gulpfile.js`中使用`gulp-load-plugins`来帮我们加载插件：
+
+	var gulp = require('gulp');
+	//加载gulp-load-plugins插件，并马上运行它
+	var plugins = require('gulp-load-plugins')();
+
+然后我们要使用`gulp-rename`和`gulp-ruby-sass`这两个插件的时候，就可以使用`plugins.rename`和`plugins.rubySass`来代替了,也就是原始插件名去掉gulp-前缀，之后再转换为驼峰命名。
+实质上gulp-load-plugins是为我们做了如下的转换
+	
+	plugins.rename = require('gulp-rename');
+	plugins.rubySass = require('gulp-ruby-sass');
+
+gulp-load-plugins并不会一开始就加载所有package.json里的gulp插件，而是在我们需要用到某个插件的时候，才去加载那个插件。
+最后要提醒的一点是，因为gulp-load-plugins是通过你的package.json文件来加载插件的，所以必须要保证你需要自动加载的插件已经写入到了package.json文件里，并且这些插件都是已经安装好了的。
+
+4.2 重命名
+
+使用`gulp-rename`
+
+	npm install --save-dev gulp-rename
+
+用来重命名文件流中的文件。用`gulp.dest()`方法写入文件时，文件名使用的是文件流中的文件名，如果要想改变文件名，那可以在之前用gulp-rename插件来改变文件流中的文件名。
+
+	var gulp = require('gulp'),
+	    rename = require('gulp-rename'),
+	    uglify = require("gulp-uglify");
+	 
+	gulp.task('rename', function () {
+	    gulp.src('js/jquery.js')
+	    .pipe(uglify())  //压缩
+	    .pipe(rename('jquery.min.js')) //会将jquery.js重命名为jquery.min.js
+	    .pipe(gulp.dest('js'));
+	    //关于gulp-rename的更多强大的用法请参考https://www.npmjs.com/package/gulp-rename
+	});
+
+####js文件压缩
+
+使用`gulp-uglify`
+
+	npm install --save-dev gulp-uglify
+
+用来压缩js文件，使用的是uglify引擎
+
+	var gulp = require('gulp'),
+	    uglify = require("gulp-uglify");
+	 
+	gulp.task('minify-js', function () {
+	    gulp.src('js/*.js') // 要压缩的js文件
+	    .pipe(uglify())  //使用uglify进行压缩,更多配置请参考：
+	    .pipe(gulp.dest('dist/js')); //压缩后的路径
+	});
+
+#### css文件压缩
+
+使用`gulp-minify-css`
+
+	npm install --save-dev gulp-minify-css
+要压缩css文件时可以使用该插件
+	
+	var gulp = require('gulp'),
+	    minifyCss = require("gulp-minify-css");
+	 
+	gulp.task('minify-css', function () {
+	    gulp.src('css/*.css') // 要压缩的css文件
+	    .pipe(minifyCss()) //压缩css
+	    .pipe(gulp.dest('dist/css'));
+	});
+
+####html文件压缩
+
+gulp-minify-html
+	
+		npm install --save-dev gulp-minify-html
+	
+用来压缩html文件
+	
+	var gulp = require('gulp'),
+	    minifyHtml = require("gulp-minify-html");
+	 
+	gulp.task('minify-html', function () {
+	    gulp.src('html/*.html') // 要压缩的html文件
+	    .pipe(minifyHtml()) //压缩
+	    .pipe(gulp.dest('dist/html'));
+	});
+
+####js代码检查
+
+	使用gulp-jshint
+	安装：npm install --save-dev gulp-jshint
+	用来检查js代码
+	
+	var gulp = require('gulp'),
+	    jshint = require("gulp-jshint");
+	 
+	gulp.task('jsLint', function () {
+	    gulp.src('js/*.js')
+	    .pipe(jshint())
+	    .pipe(jshint.reporter()); // 输出检查结果
+	});
+
+####文件合并
+
+使用`gulp-concat`
+
+	npm install --save-dev gulp-concat
+
+用来把多个文件合并为一个文件,我们可以用它来合并js或css文件等，这样就能减少页面的http请求数了
+
+	var gulp = require('gulp'),
+	    concat = require("gulp-concat");
+	 
+	gulp.task('concat', function () {
+	    gulp.src('js/*.js')  //要合并的文件
+	    .pipe(concat('all.js'))  // 合并匹配到的js文件并命名为 "all.js"
+	    .pipe(gulp.dest('dist/js'));
+	});
+
+####less和sass的编译
+
+less使用gulp-less
+
+	npm install --save-dev gulp-less
+	
+	var gulp = require('gulp'),
+	    less = require("gulp-less");
+	 
+	gulp.task('compile-less', function () {
+	    gulp.src('less/*.less')
+	    .pipe(less())
+	    .pipe(gulp.dest('dist/css'));
+	});
+	sass使用gulp-sass,安装：npm install --save-dev gulp-sass
+	
+	var gulp = require('gulp'),
+	    sass = require("gulp-sass");
+	 
+	gulp.task('compile-sass', function () {
+	    gulp.src('sass/*.sass')
+	    .pipe(sass())
+	    .pipe(gulp.dest('dist/css'));
+	});
+#####图片压缩
+
+可以使用`gulp-imagemin`插件来压缩jpg、png、gif等图片。
+
+	npm install --save-dev gulp-imagemin
+	
+	var gulp = require('gulp');
+	var imagemin = require('gulp-imagemin');
+	var pngquant = require('imagemin-pngquant'); //png图片压缩插件
+	
+	gulp.task('default', function () {
+	    return gulp.src('src/images/*')
+	        .pipe(imagemin({
+	            progressive: true,
+	            use: [pngquant()] //使用pngquant来压缩png图片
+	        }))
+	        .pipe(gulp.dest('dist'));
+	});
+gulp-imagemin的使用比较复杂一点，而且它本身也有很多插件，建议去它的项目主页看看文档
+
+##### 自动刷新
+
+使用`gulp-livereload`插件，
+
+	npm install --save-dev gulp-livereload。
+当代码变化时，它可以帮我们自动刷新页面
+该插件最好配合谷歌浏览器来使用，且要安装livereload chrome extension扩展插件,不能下载的请自行FQ。
+
+	var gulp = require('gulp'),
+	    less = require('gulp-less'),
+	    livereload = require('gulp-livereload');
+	
+	gulp.task('less', function() {
+	  gulp.src('less/*.less')
+	    .pipe(less())
+	    .pipe(gulp.dest('css'))
+	    .pipe(livereload());
+	});
+	
+	gulp.task('watch', function() {
+	  livereload.listen(); //要在这里调用listen()方法
+	  gulp.watch('less/*.less', ['less']);
+	});
+
+reference:[http://www.cnblogs.com/2050/p/4198792.html](http://www.cnblogs.com/2050/p/4198792.html "前端构建工具gulp")
